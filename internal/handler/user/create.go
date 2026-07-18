@@ -12,23 +12,23 @@ import (
 	pkghttp "github.com/ulibaysya/caseit/pkg/http"
 )
 
-type UserService interface {
+type UserCreatorService interface {
 	Create(ctx context.Context, name string, imageURL string) (id int64, err error)
 }
 
-type Create struct {
+type CreateHandler struct {
 	logger      *slog.Logger
-	userService UserService
+	userService UserCreatorService
 }
 
-func NewCreate(logger *slog.Logger, userService UserService) Create {
-	return Create{
+func NewCreateHandler(logger *slog.Logger, userService UserCreatorService) CreateHandler {
+	return CreateHandler{
 		userService: userService,
 		logger:      logger,
 	}
 }
 
-func (h Create) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	parameters := struct {
