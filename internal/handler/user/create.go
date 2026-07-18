@@ -40,7 +40,7 @@ func (h Create) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, io.EOF) {
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got empty body")
 			pkghttp.ErrorJSON(w, "empty body", http.StatusBadRequest)
-		} else if _, ok := err.(*json.SyntaxError); ok {
+		} else if _, ok := errors.AsType[*json.SyntaxError](err); ok {
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got invalid json", slog.String("error", err.Error()))
 			pkghttp.ErrorJSON(w, "invalid json", http.StatusBadRequest)
 		} else {
