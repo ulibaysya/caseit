@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 
 	pkghttp "github.com/ulibaysya/caseit/pkg/http"
 )
@@ -31,10 +32,7 @@ func NewCreateHandler(logger *slog.Logger, userService UserCreatorService) Creat
 func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	parameters := struct {
-		Name     string `json:"name"`
-		ImageURL string `json:"image_url"`
-	}{}
+	parameters := createParameters{}
 	err := json.NewDecoder(r.Body).Decode(&parameters)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
@@ -50,14 +48,10 @@ func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if parameters.Name == "" {
-		h.logger.LogAttrs(ctx, slog.LevelWarn, "request with empty name")
-		pkghttp.ErrorJSON(w, "empty name", http.StatusBadRequest)
-		return
-	}
-	if parameters.ImageURL == "" {
-		h.logger.LogAttrs(ctx, slog.LevelWarn, "request with empty image_url")
-		pkghttp.ErrorJSON(w, "empty image_url", http.StatusBadRequest)
+	if err = parameters.Validate(); err != nil {
+		errStr := err.Error()
+		h.logger.LogAttrs(ctx, slog.LevelWarn, "validating request parameters", slog.String("error", errStr))
+		pkghttp.ErrorJSON(w, errStr, http.StatusBadRequest)
 		return
 	}
 
@@ -77,4 +71,26 @@ func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		pkghttp.ErrorJSON500(w)
 		return
 	}
+}
+
+type createParameters struct {
+	Name     string `json:"name"`
+	ImageURL string `json:"image_url"`
+}
+
+func (p createParameters) Validate() error {
+	if p.Name == "" {
+		return fmt.Errorf("empty name")
+	}
+	if p.ImageURL == "" {
+		return fmt.Errorf("empty image_url")
+	}
+	imageURL, err := url.ParseRequestURI(p.ImageURL)
+	if err != nil {
+		return fmt.Errorf("image_url is not an url")
+	}
+	if imageURL.Scheme != "http" && imageURL.Scheme != "https" {
+		return fmt.Errorf("image_url doesn't have an http/https scheme")
+	}
+	return nil
 }

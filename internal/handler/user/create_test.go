@@ -87,10 +87,17 @@ func TestCreateHandler(t *testing.T) {
 			serviceNumOfCalls: 0,
 		},
 		{
-			testName:          "OmittedImageURL",
-			requestBody:       `{"name":"imechkOkoko"}`,
+			testName:          "imageURLNotURL",
+			requestBody:       `{"name":"imechkOkoko","image_url":"I AM NOT AN URL"}`,
 			statusCode:        http.StatusBadRequest,
-			responseBody:      `"empty image_url"`,
+			responseBody:      `"image_url is not an url"`,
+			serviceNumOfCalls: 0,
+		},
+		{
+			testName:          "imageURLNotHTTPScheme",
+			requestBody:       `{"name":"imechkOkoko","image_url":"ssh://localhost/12345"}`,
+			statusCode:        http.StatusBadRequest,
+			responseBody:      `"image_url doesn't have an http/https scheme"`,
 			serviceNumOfCalls: 0,
 		},
 		{
