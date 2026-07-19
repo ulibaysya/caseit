@@ -82,15 +82,14 @@ func (p createParameters) Validate() error {
 	if p.Name == "" {
 		return fmt.Errorf("empty name")
 	}
-	if p.ImageURL == "" {
-		return fmt.Errorf("empty image_url")
-	}
-	imageURL, err := url.ParseRequestURI(p.ImageURL)
-	if err != nil {
-		return fmt.Errorf("image_url is not an url")
-	}
-	if imageURL.Scheme != "http" && imageURL.Scheme != "https" {
-		return fmt.Errorf("image_url doesn't have an http/https scheme")
+	if p.ImageURL != "" {
+		imageURL, err := url.ParseRequestURI(p.ImageURL)
+		if err != nil {
+			return fmt.Errorf("image_url is not an url")
+		}
+		if imageURL.Scheme != "http" && imageURL.Scheme != "https" {
+			return fmt.Errorf("image_url doesn't have an http/https scheme")
+		}
 	}
 	return nil
 }

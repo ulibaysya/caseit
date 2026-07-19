@@ -118,6 +118,16 @@ func TestCreateHandler(t *testing.T) {
 			imageURL:          "https://s3.caseit.net/avatars/wmh7Gc--QRLD0O18Vu-U9rDDTkre8sZIwrcHcbpDYzs.jpg",
 			location:          "/users/1",
 		},
+		{
+			testName:          "NormalOmittedImageURL",
+			requestBody:       `{"name":"UsErNaMe"}`,
+			statusCode:        http.StatusCreated,
+			responseBody:      "1",
+			serviceNumOfCalls: 1,
+			name:              "UsErNaMe",
+			imageURL:          "",
+			location:          "/users/1",
+		},
 	}
 
 	for _, i := range tests {
