@@ -88,7 +88,10 @@ func (p createParameters) Validate() error {
 			return fmt.Errorf("image_url is not an url")
 		}
 		if imageURL.Scheme != "http" && imageURL.Scheme != "https" {
-			return fmt.Errorf("image_url doesn't have an http/https scheme")
+			return fmt.Errorf("image_url's scheme is not an http/https")
+		}
+		if imageURL.OmitHost || imageURL.Host == "" {
+			return fmt.Errorf("image_url's host is empty")
 		}
 	}
 	return nil
