@@ -1,8 +1,7 @@
-package user
+package handler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"net/url"
 
 	pkghttp "github.com/ulibaysya/caseit/pkg/http"
+	pkgjson "github.com/ulibaysya/caseit/pkg/json"
 )
 
 type UserCreatorService interface {
@@ -32,13 +32,12 @@ func NewCreateHandler(logger *slog.Logger, userService UserCreatorService) Creat
 func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	parameters := createParameters{}
-	err := json.NewDecoder(r.Body).Decode(&parameters)
+	parameters, err := pkgjson.Read[createParameters](r.Body)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got empty body")
 			pkghttp.ErrorJSON(w, "empty body", http.StatusBadRequest)
-		} else if _, ok := errors.AsType[*json.SyntaxError](err); ok {
+		} else if errors.Is(err, pkgjson.ErrInvalid){
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got invalid json", slog.String("error", err.Error()))
 			pkghttp.ErrorJSON(w, "invalid json", http.StatusBadRequest)
 		} else {
@@ -66,9 +65,8 @@ func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	if err = pkghttp.WriteJSON(w, id); err != nil {
+	if err = pkgjson.Write(w, id); err != nil {
 		h.logger.LogAttrs(ctx, slog.LevelError, "writing response", slog.String("error", err.Error()))
-		pkghttp.ErrorJSON500(w)
 		return
 	}
 }
