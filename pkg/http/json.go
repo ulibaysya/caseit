@@ -1,23 +1,10 @@
 package http
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-)
 
-func WriteJSON[T any](w http.ResponseWriter, v T) error {
-	encoded, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Errorf("encoding data to json: %w", err)
-	}
-	if n, err := w.Write(encoded); err != nil {
-		return fmt.Errorf("writing json data: %w", err)
-	} else if encodedLen := len(encoded); n != encodedLen {
-		return fmt.Errorf("written %v bytes out of %v", n, encodedLen)
-	}
-	return nil
-}
+	pkgjson "github.com/ulibaysya/caseit/pkg/json"
+)
 
 func ErrorJSON(w http.ResponseWriter, error string, code int) {
 	h := w.Header()
@@ -27,8 +14,7 @@ func ErrorJSON(w http.ResponseWriter, error string, code int) {
 	h.Set("Content-Type", "application/json; charset=utf-8")
 	h.Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(code)
-	encodedError, _ := json.Marshal(error)
-	w.Write(encodedError) //nolint:errcheck
+	pkgjson.Write(w, error) //nolint:errcheck
 }
 
 func ErrorJSON500(w http.ResponseWriter) {
