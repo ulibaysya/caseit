@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -32,12 +33,13 @@ func NewCreateHandler(logger *slog.Logger, userService UserCreatorService) Creat
 func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	parameters, err := pkgjson.Read[createParameters](r.Body)
+	// TODO handler inappropriate request
+	parameters, err := pkgjson.Read[createParameters](r.Body, true)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got empty body")
 			pkghttp.ErrorJSON(w, "empty body", http.StatusBadRequest)
-		} else if errors.Is(err, pkgjson.ErrInvalid){
+		} else if _, ok := errors.AsType[*json.SyntaxError](err); ok {
 			h.logger.LogAttrs(ctx, slog.LevelWarn, "got invalid json", slog.String("error", err.Error()))
 			pkghttp.ErrorJSON(w, "invalid json", http.StatusBadRequest)
 		} else {
