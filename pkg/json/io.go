@@ -2,20 +2,21 @@ package json
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 )
 
-func Read[T any](body io.Reader) (T, error) {
+func Read[T any](body io.Reader, disallowUnknownFields bool) (T, error) {
 	var decoded T
-	err := json.NewDecoder(body).Decode(&decoded)
-	if err != nil {
-		if _, ok := errors.AsType[*json.SyntaxError](err); ok {
-			return *new(T), fmt.Errorf("%w: %w", ErrInvalid, err)
-		} else {
-			return *new(T), err
+	decoder := json.NewDecoder(body)
+	if disallowUnknownFields {
+		decoder.DisallowUnknownFields()
+	}
+	if err := decoder.Decode(&decoded); err != nil {
+		if fieldErr, ok := AsUnknownFieldErr(err); ok {
+			return *new(T), &fieldErr
 		}
+		return *new(T), err
 	}
 	return decoded, nil
 }
