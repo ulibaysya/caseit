@@ -1,4 +1,4 @@
-package handler
+package user
 
 import (
 	"context"
@@ -14,23 +14,23 @@ import (
 	pkgjson "github.com/ulibaysya/caseit/pkg/json"
 )
 
-type UserCreatorService interface {
+type Service interface {
 	Create(ctx context.Context, name string, imageURL string) (id int64, err error)
 }
 
-type CreateHandler struct {
+type handler struct {
 	logger      *slog.Logger
-	userService UserCreatorService
+	service Service
 }
 
-func NewCreateHandler(logger *slog.Logger, userService UserCreatorService) CreateHandler {
-	return CreateHandler{
-		userService: userService,
+func NewHandler(logger *slog.Logger, service Service) handler {
+	return handler{
+		service: service,
 		logger:      logger,
 	}
 }
 
-func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// TODO handler inappropriate request
@@ -56,7 +56,7 @@ func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.userService.Create(ctx, parameters.Name, parameters.ImageURL)
+	id, err := h.service.Create(ctx, parameters.Name, parameters.ImageURL)
 	if err != nil {
 		h.logger.LogAttrs(ctx, slog.LevelError, "creating user", slog.String("error", err.Error()))
 		pkghttp.ErrorJSON500(w)

@@ -1,4 +1,4 @@
-package handler
+package user
 
 import (
 	"bytes"
@@ -32,8 +32,7 @@ func (c create) test(t *testing.T) {
 	}
 	rec := httptest.NewRecorder()
 	// logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
-	// NewCreateHandler(logger, service).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/users", bytes.NewBufferString(c.requestBody)))
-	NewCreateHandler(discardLogger, service).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/users", bytes.NewBufferString(c.requestBody)))
+	NewHandler(discardLogger, service).Create(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/users", bytes.NewBufferString(c.requestBody)))
 	response := rec.Result()
 	defer response.Body.Close() //nolint:errcheck
 
