@@ -16,13 +16,12 @@ type AuthKeyHandler interface {
 	// Exchange(http.ResponseWriter, *http.Request)
 }
 
-// func NewHandler(logger *slog.Logger, userHandler UserHandler, authKeyHandler AuthKeyHandler) http.Handler {
-func NewHandler(logger *slog.Logger, userHandler UserHandler) http.Handler {
+func NewHandler(logger *slog.Logger, userHandler UserHandler, authKeyHandler AuthKeyHandler) http.Handler {
 	mux := chi.NewMux()
 
 	mux.HandleFunc("POST /users", userHandler.Create)
 
-	// mux.HandleFunc("POST /auth/keys", authKeyHandler.Create)
+	mux.HandleFunc("POST /auth/keys", authKeyHandler.Create)
 	// mux.HandleFunc("POST /auth/keys", authKeyHandler.Exchange)
 
 	return mux

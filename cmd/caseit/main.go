@@ -14,10 +14,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ulibaysya/caseit/internal/app"
+	"github.com/ulibaysya/caseit/internal/auth/key"
+	"github.com/ulibaysya/caseit/internal/auth/key/keygen"
 	"github.com/ulibaysya/caseit/internal/user"
-	// "github.com/ulibaysya/caseit/internal/auth/key"
-	// "github.com/ulibaysya/caseit/internal/auth/key/keygen"
-	// "github.com/ulibaysya/caseit/internal/user/storage/postgres"
 )
 
 func main() {
@@ -46,14 +45,14 @@ func run(ctx context.Context) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	userStorage := user.NewStorage(pool)
-	// authKeyStorage := key.NewStorage(pool)
+	authKeyStorage := key.NewStorage(pool)
 
-	// authKeyService := key.NewService(authKeyStorage, keygen.NewUsingB64url(32))
+	authKeyService := key.NewService(authKeyStorage, keygen.NewUsingB64url(32))
 
 	userHandler := user.NewHandler(logger, userStorage)
-	// authKeyHandler := key.NewHandler(logger, authKeyService)
+	authKeyHandler := key.NewHandler(logger, authKeyService)
 
-	handler := app.NewHandler(logger, userHandler)
+	handler := app.NewHandler(logger, userHandler, authKeyHandler)
 
 	httpServ := http.Server{
 		Addr:    ":8080",
@@ -87,7 +86,7 @@ func run(ctx context.Context) error {
 	cancel()
 
 	// TODO config
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second * 20)
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	if err = httpServ.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		logger.Error("shutting down http server", "error", err)
