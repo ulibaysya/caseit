@@ -1,4 +1,4 @@
-package handler
+package key
 
 import (
 	"context"
@@ -17,32 +17,32 @@ import (
 // TODO move these things to pkg/
 var discardLogger = slog.New(slog.DiscardHandler)
 
-type requst struct {
+type requstData struct {
 	body       string
 	bodyReader io.Reader
 	ctxFunc    func() context.Context
 }
 
-type response struct {
+type responseData struct {
 	status int
 	body   string
 }
 
-type service struct {
+type serviceData struct {
 	numOfCalls int
 	authKey    string
 	err        error
 }
 
-type test struct {
+type createTest struct {
 	name     string
-	requst   requst
-	response response
-	service  service
+	requst   requstData
+	response responseData
+	service  serviceData
 }
 
 // TODO test logging
-func (test test) run(t *testing.T) {
+func (test createTest) run(t *testing.T) {
 	mockService := &mockService{}
 	if test.service.err != nil {
 		mockService.returnError(test.service.err)
@@ -66,8 +66,8 @@ func (test test) run(t *testing.T) {
 
 	req := httptest.NewRequestWithContext(ctx, http.MethodPost, "https://api.caseit.io/auth/keys", test.requst.bodyReader)
 
-	New(slog.New(slog.NewTextHandler(t.Output(), nil)), mockService).Create(rr, req)
-	// New(discardLogger, mockService).Create(rr, req)
+	// New(slog.New(slog.NewTextHandler(t.Output(), nil)), mockService).Create(rr, req)
+	NewHandler(discardLogger, mockService).Create(rr, req)
 
 	if rr.Code != test.response.status {
 		t.Fatalf("unexpected status code: %v; expected: %v", rr.Code, test.response.status)
@@ -83,91 +83,91 @@ func (test test) run(t *testing.T) {
 }
 
 func TestCreateHandler(t *testing.T) {
-	tests := []test{
+	tests := []createTest{
 		{
 			name: "EmptyBody",
-			requst: requst{
+			requst: requstData{
 				body: "",
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusBadRequest,
 				body:   `"empty body"`,
 			},
 		},
 		{
 			name: "InvalidJSON",
-			requst: requst{
+			requst: requstData{
 				body: "NoT jSoN",
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusBadRequest,
 				body:   `"invalid json"`,
 			},
 		},
 		{
 			name: "InappropriateRequestValues",
-			requst: requst{
+			requst: requstData{
 				body: `{"user_id":"not appropriate"}`,
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusBadRequest,
 				body:   `"inappropriate request"`,
 			},
 		},
 		{
 			name: "InappropriateRequestKeys",
-			requst: requst{
+			requst: requstData{
 				body: `{"hello":"not appropriate"}`,
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusBadRequest,
 				body:   `"inappropriate request"`,
 			},
 		},
 		{
 			name: "ErrorDecoding",
-			requst: requst{
+			requst: requstData{
 				bodyReader: errReader{},
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusInternalServerError,
 				body:   `"Internal Server Error"`,
 			},
 		},
 		{
 			name: "InvalidUserID",
-			requst: requst{
+			requst: requstData{
 				body: `{"user_id":-5}`,
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusBadRequest,
 				body:   `"invalid user_id: less than zero: -5"`,
 			},
 		},
 		{
 			name: "ServiceError",
-			requst: requst{
+			requst: requstData{
 				body: `{"user_id":18435}`,
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusInternalServerError,
 				body:   `"Internal Server Error"`,
 			},
-			service: service{
+			service: serviceData{
 				numOfCalls: 1,
 				err:        errors.New("some error"),
 			},
 		},
 		{
 			name: "Success",
-			requst: requst{
+			requst: requstData{
 				body: `{"user_id":18435}`,
 			},
-			response: response{
+			response: responseData{
 				status: http.StatusCreated,
 				body:   `"IYOUzS3M9eSY_WB1O0cFj406Tun-L5h8xQvLO6Ds7GM"`,
 			},
-			service: service{
+			service: serviceData{
 				numOfCalls: 1,
 				authKey:    "IYOUzS3M9eSY_WB1O0cFj406Tun-L5h8xQvLO6Ds7GM",
 			},

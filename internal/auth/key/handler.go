@@ -1,6 +1,7 @@
-package handler
+package key
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,25 @@ import (
 	pkgjson "github.com/ulibaysya/caseit/pkg/json"
 )
 
-func (h Handler) Create(w http.ResponseWriter, r *http.Request) {
+type Service interface {
+	Create(ctx context.Context, userID user.ID) (authKey string, err error)
+	// Exchange(ctx context.Context, key string) (tokens auth.Tokens, err error)
+}
+
+type handler struct {
+	logger  *slog.Logger
+	service Service
+}
+
+func NewHandler(logger *slog.Logger, service Service) handler {
+	return handler{
+		logger:  logger,
+		service: service,
+	}
+}
+
+// TODO fix case when received "{}". json just sets id to 0 and tells nothing that field is omitted
+func (h handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// TODO abstract decoding json request error checking
@@ -45,7 +64,7 @@ func (h Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authKey, err := h.service.Create(ctx, request.UserID)
+	authKey, err := h.service.Create(ctx, *request.UserID)
 	if err != nil {
 		h.logger.LogAttrs(ctx, slog.LevelError, "creating auth key", slog.String("error", err.Error()))
 		pkghttp.ErrorJSON500(w)
@@ -61,10 +80,13 @@ func (h Handler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 type creationRequest struct {
-	UserID user.ID `json:"user_id"`
+	UserID *user.ID `json:"user_id"`
 }
 
 func (r creationRequest) Validate() error {
+	if r.UserID == nil {
+		return fmt.Errorf("user_id is omitted")
+	}
 	err := r.UserID.Validate()
 	if err != nil {
 		return fmt.Errorf("invalid user_id: %w", err)
