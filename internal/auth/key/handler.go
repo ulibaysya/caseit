@@ -66,8 +66,13 @@ func (h handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	authKey, err := h.service.Create(ctx, *request.UserID)
 	if err != nil {
-		h.logger.LogAttrs(ctx, slog.LevelError, "creating auth key", slog.String("error", err.Error()))
-		pkghttp.ErrorJSON500(w)
+		if errors.Is(err, user.ErrNotFound) {
+			h.logger.LogAttrs(ctx, slog.LevelWarn, "non-existent user is triggered", slog.Int64("id", int64(*request.UserID)))
+			pkghttp.ErrorJSON(w, err.Error(), http.StatusNotFound)
+		} else {
+			h.logger.LogAttrs(ctx, slog.LevelError, "creating auth key", slog.String("error", err.Error()))
+			pkghttp.ErrorJSON500(w)
+		}
 		return
 	}
 

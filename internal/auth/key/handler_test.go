@@ -3,6 +3,7 @@ package key
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -34,7 +35,7 @@ type serviceData struct {
 	err        error
 }
 
-type createTest struct {
+type createHandlerTest struct {
 	name     string
 	requst   requstData
 	response responseData
@@ -42,7 +43,7 @@ type createTest struct {
 }
 
 // TODO test logging
-func (test createTest) run(t *testing.T) {
+func (test createHandlerTest) run(t *testing.T) {
 	mockService := &mockService{}
 	if test.service.err != nil {
 		mockService.returnError(test.service.err)
@@ -83,7 +84,7 @@ func (test createTest) run(t *testing.T) {
 }
 
 func TestCreateHandler(t *testing.T) {
-	tests := []createTest{
+	tests := []createHandlerTest{
 		{
 			name: "EmptyBody",
 			requst: requstData{
@@ -156,6 +157,20 @@ func TestCreateHandler(t *testing.T) {
 			service: serviceData{
 				numOfCalls: 1,
 				err:        errors.New("some error"),
+			},
+		},
+		{
+			name: "UserNotFound",
+			requst: requstData{
+				body: `{"user_id":18435}`,
+			},
+			response: responseData{
+				status: http.StatusNotFound,
+				body:   `"user 18435: not found"`,
+			},
+			service: serviceData{
+				numOfCalls: 1,
+				err:        fmt.Errorf("user 18435: %w", user.ErrNotFound),
 			},
 		},
 		{
