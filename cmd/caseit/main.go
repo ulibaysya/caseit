@@ -47,7 +47,7 @@ func run(ctx context.Context) error {
 	userStorage := user.NewStorage(pool)
 	authKeyStorage := key.NewStorage(pool)
 
-	authKeyService := key.NewService(authKeyStorage, keygen.NewUsingB64url(32))
+	authKeyService := key.NewService(logger, authKeyStorage, keygen.NewUsingB64url(32))
 
 	userHandler := user.NewHandler(logger, userStorage)
 	authKeyHandler := key.NewHandler(logger, authKeyService)
